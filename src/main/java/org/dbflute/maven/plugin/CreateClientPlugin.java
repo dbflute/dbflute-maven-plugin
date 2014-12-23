@@ -87,7 +87,7 @@ public class CreateClientPlugin extends AbstractMojo {
     protected String targetContainer;
 
     /**
-     * @parameter property="dbflute.packageBase}" default-value="${rootPackage"
+     * @parameter property="dbflute.packageBase" default-value="${rootPackage}"
      */
     protected String packageBase;
 
