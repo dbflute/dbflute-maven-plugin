@@ -23,7 +23,7 @@ import org.dbflute.maven.plugin.command.CommandExecutor;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
- * DocCommandPlugin provides doc goal to run doc.[sh|bat].
+ * DocCommandPlugin provides doc goal to run manage.[sh|bat] doc.
  * 
  * @goal doc
  * 

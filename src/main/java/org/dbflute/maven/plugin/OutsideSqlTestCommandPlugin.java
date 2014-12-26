@@ -23,7 +23,7 @@ import org.dbflute.maven.plugin.command.CommandExecutor;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
- * OutsideSqlTestCommandPlugin provides outside-sql-test goal to run outside-sql-test.[sh|bat].
+ * OutsideSqlTestCommandPlugin provides outside-sql-test goal to run manage.[sh|bat] outside-sql-test.
  * 
  * @goal outside-sql-test
  * 

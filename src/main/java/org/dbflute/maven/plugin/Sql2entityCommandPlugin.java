@@ -23,7 +23,7 @@ import org.dbflute.maven.plugin.command.CommandExecutor;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
- * Sql2entityCommandPlugin provides sql2entity goal to run sql2entity.[sh|bat].
+ * Sql2entityCommandPlugin provides sql2entity goal to run manage.[sh|bat] sql2entity.
  * 
  * @goal sql2entity
  * 

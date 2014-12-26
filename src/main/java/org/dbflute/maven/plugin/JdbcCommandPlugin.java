@@ -23,7 +23,7 @@ import org.dbflute.maven.plugin.command.CommandExecutor;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
- * JdbcCommandPlugin provides jdbc goal to run jdbc.[sh|bat].
+ * JdbcCommandPlugin provides jdbc goal to run manage.[sh|bat] jdbc.
  * 
  * @goal jdbc
  * 

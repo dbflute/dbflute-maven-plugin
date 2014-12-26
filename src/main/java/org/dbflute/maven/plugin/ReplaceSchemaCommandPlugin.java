@@ -24,7 +24,7 @@ import org.dbflute.maven.plugin.command.CommandExecutor;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
- * ReplaceSchemaCommandPlugin provides replace-schema goal to run replace-schema.[sh|bat].
+ * ReplaceSchemaCommandPlugin provides replace-schema goal to run manage.[sh|bat] replace-schema.
  * 
  * @goal replace-schema
  * 
