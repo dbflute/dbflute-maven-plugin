@@ -44,7 +44,7 @@ public class DownloadPlugin extends AbstractMojo {
     protected String downloadFilePrefix;
 
     /**
-     * @parameter property="dbflute.downloadUrl" default-value="http://dbflute.org/download/dbflute/dbflute-$$version$$.zip"
+     * @parameter property="dbflute.downloadUrl"
      */
     protected String downloadUrl;
 

@@ -68,7 +68,8 @@ public class DBFluteDownloader {
                 downloadUrl = paramMap.get(DBFLUTE_ENGINE_DOWNLOAD_URL);
                 if (downloadUrl == null) {
                     throw new MojoFailureException(
-                            "Set <downloadUrl> in pom.xml of -Ddbflute.downloadUrl=<url>.");
+                            "Set <downloadUrl> in pom.xml of "
+                                    + "-Ddbflute.downloadUrl=http://dbflute.org/download/dbflute/dbflute-$$version$$.zip.");
                 }
             }
             downloadUrl = downloadUrl.replace(VERSION_PLACEHOLDER,
