@@ -29,7 +29,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.dbflute.maven.plugin.CreateClientPlugin;
 import org.dbflute.maven.plugin.util.LogUtil;
-import org.dbflute.maven.plugin.util.ResourceFileUtil;
+import org.dbflute.maven.plugin.util.ResourceUtil;
 
 /**
  * ClientCreator create dbflute client directory.
@@ -71,10 +71,10 @@ public class ClientCreator {
         }
 
         // create temp dir
-        File tempDir = ResourceFileUtil.createTempDir("dbflute-client", "");
+        File tempDir = ResourceUtil.createTempDir("dbflute-client", "");
 
         try {
-            ResourceFileUtil.unzip(new FileInputStream(clientZipFile), tempDir);
+            ResourceUtil.unzip(new FileInputStream(clientZipFile), tempDir);
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(clientZipFile.getAbsolutePath()
                     + " is not found.", e);
@@ -103,49 +103,34 @@ public class ClientCreator {
                             return name.endsWith(".bat");
                         }
                     })) {
-                ResourceFileUtil.replaceContent(batFile, params, true);
+                ResourceUtil.replaceContent(batFile, params, true);
             }
         }
 
         // _project.sh
         params.clear();
-        putParam(params, "export MY_PROJECT_NAME=[^\r\n]+",
-                "export MY_PROJECT_NAME=", plugin.getClientProject());
         putParam(params, "export DBFLUTE_HOME=../mydbflute/[^\r\n]+",
                 "export DBFLUTE_HOME=../mydbflute/", plugin.getDbfluteName());
-        ResourceFileUtil.replaceContent(new File(dbfluteClientDir,
+        ResourceUtil.replaceContent(new File(dbfluteClientDir,
                 "_project.sh"), params);
 
         // _project.bat
         params.clear();
-        putParam(params, "set MY_PROJECT_NAME=[^\r\n]+",
-                "set MY_PROJECT_NAME=", plugin.getClientProject());
         putParam(params, "set DBFLUTE_HOME=..\\\\mydbflute\\\\[^\r\n]+",
                 "set DBFLUTE_HOME=..\\\\mydbflute\\\\", plugin.getDbfluteName());
-        ResourceFileUtil.replaceContent(new File(dbfluteClientDir,
+        ResourceUtil.replaceContent(new File(dbfluteClientDir,
                 "_project.bat"), params);
 
-        // build-dfclient.properties
+        // build.properties
         params.clear();
         putParam(params, "torque.project *= *[^\r\n]+", "torque.project = ",
-                plugin.getClientProject());
-        // 0.8.x
-        putParam(params, "torque.database *= *[^\r\n]+", "torque.database = ",
                 plugin.getDatabase());
-        putParam(params, "torque.packageBase *= *[^\r\n]+",
-                "torque.packageBase = ", plugin.getDatabase());
-        File propertyFile = new File(dbfluteClientDir,
-                "build-dfclient.properties");
-        if (!propertyFile.exists()) {
-            // from 0.9.5.5            
-            propertyFile = new File(dbfluteClientDir, "build.properties");
-            ResourceFileUtil.replaceContent(propertyFile, params);
-            propertyFile
-                    .renameTo(new File(dbfluteClientDir, "build.properties"));
-        } else {
-            ResourceFileUtil.replaceContent(propertyFile, params);
-            propertyFile.renameTo(new File(dbfluteClientDir, "build-"
-                    + plugin.getClientProject() + ".properties"));
+        File propertyFile = new File(dbfluteClientDir, "build.properties");
+        ResourceUtil.replaceContent(propertyFile, params);
+
+        if (plugin.getPackageBase() == null) {
+            throw new MojoFailureException(
+                    "Please set <packageBase> in pom.xml or -Ddbflute.packageBase=<package>.");
         }
 
         // dfprop/basicInfoMap.dfprop
@@ -154,7 +139,7 @@ public class ClientCreator {
         putParam(params, "@targetLanguage@", "", plugin.getTargetLanguage());
         putParam(params, "@targetContainer@", "", plugin.getTargetContainer());
         putParam(params, "@packageBase@", "", plugin.getPackageBase());
-        ResourceFileUtil.replaceContent(new File(dbfluteClientDir,
+        ResourceUtil.replaceContent(new File(dbfluteClientDir,
                 "dfprop/basicInfoMap.dfprop"), params);
 
         // dfprop/databaseInfoMap.dfprop
@@ -164,7 +149,7 @@ public class ClientCreator {
         putParam(params, "@schema@", "", plugin.getDatabaseSchema());
         putParam(params, "@user@", "", plugin.getDatabaseUser());
         putParam(params, "@password@", "", plugin.getDatabasePassword());
-        ResourceFileUtil.replaceContent(new File(dbfluteClientDir,
+        ResourceUtil.replaceContent(new File(dbfluteClientDir,
                 "dfprop/databaseInfoMap.dfprop"), params);
 
     }
@@ -172,7 +157,11 @@ public class ClientCreator {
     protected void putParam(Map<String, String> params, String key,
             String prefix, String value) {
         if (value != null) {
-            params.put(key, prefix + value);
+            if (prefix != null) {
+                params.put(key, prefix + value);
+            } else {
+                params.put(key, value);
+            }
         }
     }
 }

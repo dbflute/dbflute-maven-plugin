@@ -20,12 +20,12 @@ import java.io.InputStream;
 
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
-public class ResourceFileUtilTest extends AbstractMojoTestCase {
+public class ResourceUtilTest extends AbstractMojoTestCase {
 
     public void test_makeDir() throws Exception {
         File tempDir = File.createTempFile("mdp-", "");
         assertTrue(tempDir.delete());
-        ResourceFileUtil.makeDir(tempDir);
+        ResourceUtil.makeDir(tempDir);
         assertTrue(tempDir.isDirectory());
     }
 
@@ -33,7 +33,7 @@ public class ResourceFileUtilTest extends AbstractMojoTestCase {
         File tempDir = File.createTempFile("mdp-", "");
         assertTrue(tempDir.delete());
         tempDir.mkdirs();
-        ResourceFileUtil.makeDir(tempDir);
+        ResourceUtil.makeDir(tempDir);
         assertTrue(tempDir.isDirectory());
     }
 
@@ -42,7 +42,7 @@ public class ResourceFileUtilTest extends AbstractMojoTestCase {
                 .getResourceAsStream("zip/hoge.zip");
         File tempDir = File.createTempFile("mdp-", "");
         assertTrue(tempDir.delete());
-        ResourceFileUtil.unzip(is, tempDir);
+        ResourceUtil.unzip(is, tempDir);
         assertTrue(tempDir.isDirectory());
         File hogeDir = new File(tempDir, "hoge");
         assertTrue(hogeDir.isDirectory());

@@ -29,7 +29,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.dbflute.maven.plugin.UpgradePlugin;
 import org.dbflute.maven.plugin.util.LogUtil;
-import org.dbflute.maven.plugin.util.ResourceFileUtil;
+import org.dbflute.maven.plugin.util.ResourceUtil;
 
 /**
  * DBFluteUpgrader downloads dbflute-*.zip, extracts it and replaces _project.*.
@@ -61,7 +61,7 @@ public class DBFluteUpgrader {
         if (!dbfluteDir.exists()) {
             LogUtil.getLog().info("Creating " + dbfluteDir.getAbsolutePath());
             try (InputStream in = plugin.getDownloadInputStream()) {
-                ResourceFileUtil.unzip(in, dbfluteDir);
+                ResourceUtil.unzip(in, dbfluteDir);
             } catch (IOException e) {
                 throw new MojoExecutionException("I/O error.", e);
             }
@@ -76,10 +76,10 @@ public class DBFluteUpgrader {
         }
 
         // create temp dir
-        File tempDir = ResourceFileUtil.createTempDir("dbflute-client", "");
+        File tempDir = ResourceUtil.createTempDir("dbflute-client", "");
 
         try {
-            ResourceFileUtil.unzip(new FileInputStream(clientZipFile), tempDir);
+            ResourceUtil.unzip(new FileInputStream(clientZipFile), tempDir);
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(clientZipFile.getAbsolutePath()
                     + " is not found.", e);
@@ -115,7 +115,7 @@ public class DBFluteUpgrader {
                 "export MY_PROJECT_NAME=", plugin.getClientProject());
         putParam(params, "export DBFLUTE_HOME=../mydbflute/[^\r\n]+",
                 "export DBFLUTE_HOME=../mydbflute/", plugin.getDbfluteName());
-        ResourceFileUtil.replaceContent(new File(plugin.getDbfluteClientDir(),
+        ResourceUtil.replaceContent(new File(plugin.getDbfluteClientDir(),
                 "_project.sh"), params);
 
         // _project.bat
@@ -124,7 +124,7 @@ public class DBFluteUpgrader {
                 "set MY_PROJECT_NAME=", plugin.getClientProject());
         putParam(params, "set DBFLUTE_HOME=..\\\\mydbflute\\\\[^\r\n]+",
                 "set DBFLUTE_HOME=..\\\\mydbflute\\\\", plugin.getDbfluteName());
-        ResourceFileUtil.replaceContent(new File(plugin.getDbfluteClientDir(),
+        ResourceUtil.replaceContent(new File(plugin.getDbfluteClientDir(),
                 "_project.bat"), params);
     }
 

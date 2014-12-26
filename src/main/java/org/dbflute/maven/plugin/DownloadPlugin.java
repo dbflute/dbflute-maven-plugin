@@ -16,9 +16,6 @@
 package org.dbflute.maven.plugin;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
@@ -47,23 +44,19 @@ public class DownloadPlugin extends AbstractMojo {
     protected String downloadFilePrefix;
 
     /**
-     * @parameter property="dbflute.downloadDirUrl" default-value="http://dbflute.org/download/dbflute/"
+     * @parameter property="dbflute.downloadUrl" default-value="http://dbflute.org/download/dbflute/dbflute-$$version$$.zip"
      */
-    protected String downloadDirUrl;
+    protected String downloadUrl;
 
     /**
-     * @parameter property="dbflute.downloadFileExtension" default-value=".zip"
+     * @parameter property="dbflute.publicPropertyUrl" default-value="http://dbflute.org/meta/public.properties"
      */
-    protected String downloadFileExtension;
+    protected String publicPropertyUrl;
 
     /**
      * @parameter property="dbflute.mydbfluteDir" default-value="${basedir}/mydbflute"
      */
     protected File mydbfluteDir;
-
-    private String dbfluteName;
-
-    private String downloadPath;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
@@ -72,28 +65,28 @@ public class DownloadPlugin extends AbstractMojo {
             throw new MojoFailureException("Missing dbfluteVersion property.");
         }
 
-        dbfluteName = downloadFilePrefix + dbfluteVersion;
-        downloadPath = downloadDirUrl + dbfluteName + downloadFileExtension;
-
         DBFluteDownloader downloader = new DBFluteDownloader(this);
         downloader.execute();
     }
 
-    public File getDbfluteDir() {
-        return new File(mydbfluteDir, dbfluteName);
+    public String getPublicPropertyUrl() {
+        return publicPropertyUrl;
     }
 
-    public InputStream getDownloadInputStream() throws MojoExecutionException {
-        try {
-            URL url = new URL(downloadPath);
-            return url.openStream();
-        } catch (IOException e) {
-            throw new MojoExecutionException(
-                    "Could not open a connection of "
-                            + downloadPath
-                            + "\n\nIf you want to use a proxy server,\n"
-                            + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".",
-                    e);
-        }
+    public String getDbfluteVersion() {
+        return dbfluteVersion;
     }
+
+    public String getDownloadFilePrefix() {
+        return downloadFilePrefix;
+    }
+
+    public File getMydbfluteDir() {
+        return mydbfluteDir;
+    }
+
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
+
 }

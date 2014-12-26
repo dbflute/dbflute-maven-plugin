@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URL;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -39,7 +40,7 @@ import org.apache.maven.plugin.MojoFailureException;
  * @author shinsuke
  *
  */
-public class ResourceFileUtil {
+public class ResourceUtil {
     private static final int BUF_SIZE = 8192;
 
     public static void makeDir(File dir) throws MojoFailureException {
@@ -69,6 +70,20 @@ public class ResourceFileUtil {
                             + tempDir.getAbsolutePath());
         }
         return tempDir;
+    }
+
+    public static void unzip(String url, File destDir)
+            throws MojoFailureException, MojoExecutionException {
+        try {
+            unzip(new URL(url).openStream(), destDir, true);
+        } catch (IOException e) {
+            throw new MojoExecutionException(
+                    "Could not open a connection of "
+                            + url
+                            + "\n\nIf you want to use a proxy server,\n"
+                            + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".",
+                    e);
+        }
     }
 
     public static void unzip(InputStream inputStream, File destDir)
@@ -162,26 +177,36 @@ public class ResourceFileUtil {
         }
     }
 
-    /**
-     * @param file
-     * @param string
-     * @return
-     * @throws MojoExecutionException 
-     */
-    private static String readText(File file, String encoding)
+    public static String readText(File file, String encoding)
             throws MojoExecutionException {
+        try {
+            return readText(new FileInputStream(file), encoding);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Input error in "
+                    + file.getAbsolutePath(), e);
+        }
+    }
+
+    public static String readText(String url, String encoding)
+            throws MojoExecutionException {
+        try {
+            return readText(new URL(url).openStream(), encoding);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Input error in " + url, e);
+        }
+    }
+
+    private static String readText(InputStream input, String encoding)
+            throws IOException {
         StringBuilder out = new StringBuilder(1000);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(
-                new FileInputStream(file), encoding))) {
+                input, encoding))) {
             char[] buf = new char[BUF_SIZE];
             int n;
             while ((n = in.read(buf)) >= 0) {
                 out.append(buf, 0, n);
             }
             return out.toString();
-        }catch(IOException e){
-            throw new MojoExecutionException("Input error in "
-                    + file.getAbsolutePath(), e);
         }
     }
 }
