@@ -124,7 +124,7 @@ public class ClientCreator {
         // build.properties
         params.clear();
         putParam(params, "torque.project *= *[^\r\n]+", "torque.project = ",
-                plugin.getDatabase());
+                plugin.getClientProject());
         File propertyFile = new File(dbfluteClientDir, "build.properties");
         ResourceUtil.replaceContent(propertyFile, params);
 
