@@ -16,11 +16,14 @@
 package org.dbflute.maven.plugin;
 
 import java.io.File;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
 import org.dbflute.maven.plugin.client.ClientCreator;
 import org.dbflute.maven.plugin.util.LogUtil;
 
@@ -34,6 +37,15 @@ import org.dbflute.maven.plugin.util.LogUtil;
  */
 public class CreateClientPlugin extends AbstractMojo {
     /**
+     * The current Maven project.
+     *
+     * @parameter property="project"
+     * @required
+     * @readonly
+     */
+    protected MavenProject project;
+
+    /**
      * Project base directory (prepended for relative file paths).
      *
      * @parameter property="basedir"
@@ -42,7 +54,7 @@ public class CreateClientPlugin extends AbstractMojo {
     protected File basedir;
 
     /**
-     * @parameter property="dbflute.version" 
+     * @parameter property="dbflute.version"
      */
     protected String dbfluteVersion;
 
@@ -57,7 +69,7 @@ public class CreateClientPlugin extends AbstractMojo {
     protected File mydbfluteDir;
 
     /**
-     * @parameter property="dbflute.dbfluteClientDir" 
+     * @parameter property="dbflute.dbfluteClientDir"
      */
     private File dbfluteClientDir;
 
@@ -72,7 +84,7 @@ public class CreateClientPlugin extends AbstractMojo {
     protected String enablePause;
 
     /**
-     * @parameter property="dbflute.database" default-value="h2"
+     * @parameter property="dbflute.database"
      */
     protected String database;
 
@@ -92,28 +104,27 @@ public class CreateClientPlugin extends AbstractMojo {
     protected String packageBase;
 
     /**
-     * @parameter property="dbflute.databaseDriver" default-value="org.h2.Driver"
+     * @parameter property="dbflute.databaseDriver"
      */
     protected String databaseDriver;
 
-    // default-value="jdbc:h2:file:../src/main/webapp/WEB-INF/db/..."
     /**
      * @parameter property="dbflute.databaseUrl"
      */
     protected String databaseUrl;
 
     /**
-     * @parameter property="dbflute.databaseSchema" default-value=" "
+     * @parameter property="dbflute.databaseSchema"
      */
     protected String databaseSchema;
 
     /**
-     * @parameter property="dbflute.databaseUser" default-value="sa"
+     * @parameter property="dbflute.databaseUser"
      */
     protected String databaseUser;
 
     /**
-     * @parameter property="dbflute.databasePassword" default-value=" "
+     * @parameter property="dbflute.databasePassword"
      */
     protected String databasePassword;
 
@@ -128,8 +139,128 @@ public class CreateClientPlugin extends AbstractMojo {
 
         dbfluteName = downloadFilePrefix + dbfluteVersion;
 
+        initDatabase();
         ClientCreator creator = new ClientCreator(this);
         creator.execute();
+    }
+
+    public void initDatabase() throws MojoFailureException {
+        DatabaseType dbType = DatabaseType.UNKNOWN;
+        if (database == null) {
+            List<Dependency> dependencies = project.getModel().getDependencies();
+            for (Dependency dependency : dependencies) {
+                // mysql
+                if ("mysql".equals(dependency.getGroupId()) && "mysql-connector-java".equals(dependency.getArtifactId())) {
+                    dbType = DatabaseType.MYSQL;
+                    break;
+                }
+                // postgresql
+                if (("org.postgresql".equals(dependency.getGroupId()) || "postgresql".equals(dependency.getGroupId()))
+                        && "postgresql".equals(dependency.getArtifactId())) {
+                    dbType = DatabaseType.POSTGRESQL;
+                    break;
+                }
+            }
+
+            switch (dbType) {
+            case MYSQL:
+                database = "mysql";
+                break;
+            case POSTGRESQL:
+                database = "postgresql";
+                break;
+            default:
+                database = "h2";
+                dbType = DatabaseType.H2;
+                break;
+            }
+        } else if ("h2".equals(database)) {
+            dbType = DatabaseType.H2;
+        } else if ("mysql".equals(database)) {
+            dbType = DatabaseType.MYSQL;
+        } else if ("postgresql".equals(database)) {
+            dbType = DatabaseType.POSTGRESQL;
+        }
+
+        if (databaseDriver == null) {
+            switch (dbType) {
+            case H2:
+                databaseDriver = "org.h2.Driver";
+                break;
+            case MYSQL:
+                databaseDriver = "com.mysql.jdbc.Driver";
+                break;
+            case POSTGRESQL:
+                databaseDriver = "org.postgresql.Driver";
+                break;
+            default:
+                throw new MojoFailureException("Missing databaseDriver property.");
+            }
+        }
+
+        if (databaseUrl == null) {
+            switch (dbType) {
+            case H2:
+                databaseUrl = "jdbc:h2:file:../src/main/resources/" + clientProject;
+                break;
+            case MYSQL:
+                databaseUrl = "jdbc:mysql://localhost:3306/" + clientProject + "?characterEncoding=UTF-8";
+                break;
+            case POSTGRESQL:
+                databaseUrl = "jdbc:postgresql://localhost:5432/" + clientProject;
+                break;
+            default:
+                throw new MojoFailureException("Missing databaseUrl property.");
+            }
+        }
+
+        if (databaseSchema == null) {
+            switch (dbType) {
+            case H2:
+                databaseSchema = " ";
+                break;
+            case MYSQL:
+                databaseSchema = " ";
+                break;
+            case POSTGRESQL:
+                databaseSchema = "public";
+                break;
+            default:
+                throw new MojoFailureException("Missing databaseSchema property.");
+            }
+        }
+
+        if (databaseUser == null) {
+            switch (dbType) {
+            case H2:
+                databaseUser = "sa";
+                break;
+            case MYSQL:
+                databaseUser = clientProject;
+                break;
+            case POSTGRESQL:
+                databaseUser = clientProject;
+                break;
+            default:
+                throw new MojoFailureException("Missing databaseUser property.");
+            }
+        }
+
+        if (databasePassword == null) {
+            switch (dbType) {
+            case H2:
+                databasePassword = " ";
+                break;
+            case MYSQL:
+                databasePassword = clientProject;
+                break;
+            case POSTGRESQL:
+                databasePassword = clientProject;
+                break;
+            default:
+                throw new MojoFailureException("Missing databasePassword property.");
+            }
+        }
     }
 
     public File getDbfluteDir() {
@@ -173,10 +304,6 @@ public class CreateClientPlugin extends AbstractMojo {
     }
 
     public String getDatabaseUrl() {
-        if (databaseUrl == null) {
-            databaseUrl = "jdbc:h2:file:../src/main/webapp/WEB-INF/db/"
-                    + clientProject;
-        }
         return databaseUrl;
     }
 
@@ -194,5 +321,9 @@ public class CreateClientPlugin extends AbstractMojo {
 
     public File getBasedir() {
         return basedir;
+    }
+
+    private enum DatabaseType {
+        MYSQL, POSTGRESQL, H2, UNKNOWN;
     }
 }
