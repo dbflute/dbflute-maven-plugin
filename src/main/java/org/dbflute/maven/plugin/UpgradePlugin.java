@@ -34,7 +34,7 @@ import org.dbflute.maven.plugin.util.LogUtil;
  * @goal upgrade
  * 
  * @author shinsuke
- *
+ * @author jflute
  */
 public class UpgradePlugin extends AbstractMojo {
 
