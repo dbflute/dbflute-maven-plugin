@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.dbflute.maven.plugin.officialcopy.DfPublicProperties;
 import org.dbflute.maven.plugin.upgrade.DBFluteUpgrader;
 import org.dbflute.maven.plugin.util.LogUtil;
 
@@ -72,13 +73,19 @@ public class UpgradePlugin extends AbstractMojo {
      */
     protected String clientProject;
 
+    /** name of DBFlute containing its version same as DBFlute directory name under 'mydbflute'. (NullAllowed: until execution) */
     private String dbfluteName;
 
+    /** path of download for DBFlute engine. (NullAllowed: until execution) */
     private String downloadPath;
+
+    /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
+    private DfPublicProperties publicProperties;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
 
+        initDBFluteVersionIfPossible();
         if (StringUtils.isBlank(dbfluteVersion)) {
             throw new MojoFailureException("Missing dbfluteVersion property.");
         }
@@ -88,6 +95,24 @@ public class UpgradePlugin extends AbstractMojo {
 
         DBFluteUpgrader downloader = new DBFluteUpgrader(this);
         downloader.execute();
+    }
+
+    /**
+     * Initialize dbfluteVersion if possible. <br>
+     * Set up the version as latest release by public properties. <br>
+     * No action if it already exists and if cannot get public properties.
+     */
+    private void initDBFluteVersionIfPossible() {
+        if (!StringUtils.isBlank(dbfluteVersion)) {
+            return;
+        }
+        if (publicProperties == null) {
+            LogUtil.getLog().info("...Loading public properties");
+            publicProperties = new DfPublicProperties();
+            publicProperties.load();
+        }
+        dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
+        LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
     }
 
     public File getDbfluteDir() {
