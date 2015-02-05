@@ -101,18 +101,23 @@ public class UpgradePlugin extends AbstractMojo {
      * Initialize dbfluteVersion if possible. <br>
      * Set up the version as latest release by public properties. <br>
      * No action if it already exists and if cannot get public properties.
+     * @throws MojoFailureException When it fails to handle public properties.
      */
-    private void initDBFluteVersionIfPossible() {
+    private void initDBFluteVersionIfPossible() throws MojoFailureException {
         if (!StringUtils.isBlank(dbfluteVersion)) {
             return;
         }
-        if (publicProperties == null) {
-            LogUtil.getLog().info("...Loading public properties");
-            publicProperties = new DfPublicProperties();
-            publicProperties.load();
+        try {
+            if (publicProperties == null) {
+                LogUtil.getLog().info("...Loading public properties");
+                publicProperties = new DfPublicProperties();
+                publicProperties.load();
+            }
+            dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
+            LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
+        } catch (RuntimeException e) {
+            throw new MojoFailureException("Failed to handle public properties", e);
         }
-        dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
-        LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
     }
 
     public File getDbfluteDir() {
@@ -132,12 +137,8 @@ public class UpgradePlugin extends AbstractMojo {
             URL url = new URL(downloadPath);
             return url.openStream();
         } catch (IOException e) {
-            throw new MojoExecutionException(
-                    "Could not open a connection of "
-                            + downloadPath
-                            + "\n\nIf you want to use a proxy server,\n"
-                            + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".",
-                    e);
+            throw new MojoExecutionException("Could not open a connection of " + downloadPath + "\n\nIf you want to use a proxy server,\n"
+                    + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".", e);
         }
     }
 
