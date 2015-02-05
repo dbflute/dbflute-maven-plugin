@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.dbflute.maven.plugin.officialcopy.DfPublicProperties;
 import org.dbflute.maven.plugin.upgrade.DBFluteUpgrader;
 import org.dbflute.maven.plugin.util.LogUtil;
 
@@ -33,7 +34,7 @@ import org.dbflute.maven.plugin.util.LogUtil;
  * @goal upgrade
  * 
  * @author shinsuke
- *
+ * @author jflute
  */
 public class UpgradePlugin extends AbstractMojo {
 
@@ -72,13 +73,19 @@ public class UpgradePlugin extends AbstractMojo {
      */
     protected String clientProject;
 
+    /** name of DBFlute containing its version same as DBFlute directory name under 'mydbflute'. (NullAllowed: until execution) */
     private String dbfluteName;
 
+    /** path of download for DBFlute engine. (NullAllowed: until execution) */
     private String downloadPath;
+
+    /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
+    private DfPublicProperties publicProperties;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
 
+        initDBFluteVersionIfPossible();
         if (StringUtils.isBlank(dbfluteVersion)) {
             throw new MojoFailureException("Missing dbfluteVersion property.");
         }
@@ -88,6 +95,29 @@ public class UpgradePlugin extends AbstractMojo {
 
         DBFluteUpgrader downloader = new DBFluteUpgrader(this);
         downloader.execute();
+    }
+
+    /**
+     * Initialize dbfluteVersion if possible. <br>
+     * Set up the version as latest release by public properties. <br>
+     * No action if it already exists and if cannot get public properties.
+     * @throws MojoFailureException When it fails to handle public properties.
+     */
+    private void initDBFluteVersionIfPossible() throws MojoFailureException {
+        if (!StringUtils.isBlank(dbfluteVersion)) {
+            return;
+        }
+        try {
+            if (publicProperties == null) {
+                LogUtil.getLog().info("...Loading public properties");
+                publicProperties = new DfPublicProperties();
+                publicProperties.load();
+            }
+            dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
+            LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
+        } catch (RuntimeException e) {
+            throw new MojoFailureException("Failed to handle public properties", e);
+        }
     }
 
     public File getDbfluteDir() {
@@ -107,12 +137,8 @@ public class UpgradePlugin extends AbstractMojo {
             URL url = new URL(downloadPath);
             return url.openStream();
         } catch (IOException e) {
-            throw new MojoExecutionException(
-                    "Could not open a connection of "
-                            + downloadPath
-                            + "\n\nIf you want to use a proxy server,\n"
-                            + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".",
-                    e);
+            throw new MojoExecutionException("Could not open a connection of " + downloadPath + "\n\nIf you want to use a proxy server,\n"
+                    + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".", e);
         }
     }
 

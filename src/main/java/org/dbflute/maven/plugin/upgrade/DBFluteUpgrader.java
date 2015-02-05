@@ -35,22 +35,24 @@ import org.dbflute.maven.plugin.util.ResourceUtil;
  * DBFluteUpgrader downloads dbflute-*.zip, extracts it and replaces _project.*.
  * 
  * @author shinsuke
- *
+ * @author jflute
  */
 public class DBFluteUpgrader {
-    protected UpgradePlugin plugin;
+
+    protected final UpgradePlugin plugin;
 
     public DBFluteUpgrader(UpgradePlugin context) {
         this.plugin = context;
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-
         File dbfluteDir = plugin.getDbfluteDir();
         File dbfluteClientDir = plugin.getDbfluteClientDir();
+        if (dbfluteClientDir == null) {
+            throw new MojoFailureException("Missing dbfluteClientDir.");
+        }
         if (!dbfluteClientDir.isDirectory()) {
-            throw new MojoFailureException(dbfluteClientDir.getAbsolutePath()
-                    + " does not exist.");
+            throw new MojoFailureException(dbfluteClientDir.getAbsolutePath() + " does not exist.");
         }
 
         // Check clientProject
@@ -68,11 +70,9 @@ public class DBFluteUpgrader {
         }
 
         LogUtil.getLog().info("Creating " + dbfluteClientDir.getAbsolutePath());
-        File clientZipFile = new File(dbfluteDir,
-                "etc/client-template/dbflute_dfclient.zip");
+        File clientZipFile = new File(dbfluteDir, "etc/client-template/dbflute_dfclient.zip");
         if (!clientZipFile.exists()) {
-            throw new MojoFailureException(clientZipFile.getAbsolutePath()
-                    + " does not exist.");
+            throw new MojoFailureException(clientZipFile.getAbsolutePath() + " does not exist.");
         }
 
         // create temp dir
@@ -81,55 +81,43 @@ public class DBFluteUpgrader {
         try {
             ResourceUtil.unzip(new FileInputStream(clientZipFile), tempDir);
         } catch (FileNotFoundException e) {
-            throw new MojoExecutionException(clientZipFile.getAbsolutePath()
-                    + " is not found.", e);
+            throw new MojoExecutionException(clientZipFile.getAbsolutePath() + " is not found.", e);
         }
 
         // copy _project.*
         File srcFile;
         File destFile;
         try {
-            srcFile = new File(tempDir, "dbflute_dfclient" + File.separator
-                    + "_project.sh");
+            srcFile = new File(tempDir, "dbflute_dfclient" + File.separator + "_project.sh");
             destFile = new File(dbfluteClientDir, "_project.sh");
             LogUtil.getLog().info("Replacing " + destFile.getAbsolutePath());
             FileUtils.copyFile(srcFile, destFile);
         } catch (IOException e) {
-            throw new MojoExecutionException("Could not replace _project.sh.",
-                    e);
+            throw new MojoExecutionException("Could not replace _project.sh.", e);
         }
         try {
-            srcFile = new File(tempDir, "dbflute_dfclient" + File.separator
-                    + "_project.bat");
+            srcFile = new File(tempDir, "dbflute_dfclient" + File.separator + "_project.bat");
             destFile = new File(dbfluteClientDir, "_project.bat");
             LogUtil.getLog().info("Replacing " + destFile.getAbsolutePath());
             FileUtils.copyFile(srcFile, destFile);
         } catch (IOException e) {
-            throw new MojoExecutionException("Could not replace _project.bat.",
-                    e);
+            throw new MojoExecutionException("Could not replace _project.bat.", e);
         }
 
         // _project.sh
         Map<String, String> params = new HashMap<String, String>();
-        putParam(params, "export MY_PROJECT_NAME=[^\r\n]+",
-                "export MY_PROJECT_NAME=", plugin.getClientProject());
-        putParam(params, "export DBFLUTE_HOME=../mydbflute/[^\r\n]+",
-                "export DBFLUTE_HOME=../mydbflute/", plugin.getDbfluteName());
-        ResourceUtil.replaceContent(new File(plugin.getDbfluteClientDir(),
-                "_project.sh"), params);
+        putParam(params, "export MY_PROJECT_NAME=[^\r\n]+", "export MY_PROJECT_NAME=", plugin.getClientProject());
+        putParam(params, "export DBFLUTE_HOME=../mydbflute/[^\r\n]+", "export DBFLUTE_HOME=../mydbflute/", plugin.getDbfluteName());
+        ResourceUtil.replaceContent(new File(plugin.getDbfluteClientDir(), "_project.sh"), params);
 
         // _project.bat
         params.clear();
-        putParam(params, "set MY_PROJECT_NAME=[^\r\n]+",
-                "set MY_PROJECT_NAME=", plugin.getClientProject());
-        putParam(params, "set DBFLUTE_HOME=..\\\\mydbflute\\\\[^\r\n]+",
-                "set DBFLUTE_HOME=..\\\\mydbflute\\\\", plugin.getDbfluteName());
-        ResourceUtil.replaceContent(new File(plugin.getDbfluteClientDir(),
-                "_project.bat"), params);
+        putParam(params, "set MY_PROJECT_NAME=[^\r\n]+", "set MY_PROJECT_NAME=", plugin.getClientProject());
+        putParam(params, "set DBFLUTE_HOME=..\\\\mydbflute\\\\[^\r\n]+", "set DBFLUTE_HOME=..\\\\mydbflute\\\\", plugin.getDbfluteName());
+        ResourceUtil.replaceContent(new File(plugin.getDbfluteClientDir(), "_project.bat"), params);
     }
 
-    protected void putParam(Map<String, String> params, String key,
-            String prefix, String value) {
+    protected void putParam(Map<String, String> params, String key, String prefix, String value) {
         if (value != null) {
             params.put(key, prefix + value);
         }
