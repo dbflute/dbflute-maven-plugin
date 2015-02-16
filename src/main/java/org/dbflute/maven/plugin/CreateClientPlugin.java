@@ -16,7 +16,11 @@
 package org.dbflute.maven.plugin;
 
 import java.io.File;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Dependency;
@@ -25,7 +29,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.dbflute.maven.plugin.client.ClientCreator;
-import org.dbflute.maven.plugin.officialcopy.DfPublicProperties;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
@@ -38,6 +41,9 @@ import org.dbflute.maven.plugin.util.LogUtil;
  */
 public class CreateClientPlugin extends AbstractMojo {
 
+    // ===================================================================================
+    //                                                                           Attribute
+    //                                                                           =========
     /**
      * The current Maven project.
      *
@@ -133,9 +139,9 @@ public class CreateClientPlugin extends AbstractMojo {
     /** name of DBFlute containing its version same as DBFlute directory name under 'mydbflute'. (NullAllowed: until execution) */
     private String dbfluteName;
 
-    /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
-    private DfPublicProperties publicProperties;
-
+    // ===================================================================================
+    //                                                                             Execute
+    //                                                                             =======
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
 
@@ -151,6 +157,9 @@ public class CreateClientPlugin extends AbstractMojo {
         creator.execute();
     }
 
+    // ===================================================================================
+    //                                                                     DBFlute Version
+    //                                                                     ===============
     /**
      * Initialize dbfluteVersion if possible. <br>
      * Set up the version as latest release by public properties. <br>
@@ -161,19 +170,71 @@ public class CreateClientPlugin extends AbstractMojo {
         if (!StringUtils.isBlank(dbfluteVersion)) {
             return;
         }
-        try {
-            if (publicProperties == null) {
-                LogUtil.getLog().info("...Loading public properties");
-                publicProperties = new DfPublicProperties();
-                publicProperties.load();
-            }
-            dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
-            LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
-        } catch (RuntimeException e) {
-            throw new MojoFailureException("Failed to handle public properties", e);
+        if (!mydbfluteDir.exists()) {
+            throw new MojoFailureException(mydbfluteDir.getAbsolutePath() + " does not exist.");
         }
+        final File[] dbfluteEngineDirs = mydbfluteDir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.startsWith(downloadFilePrefix);
+            }
+        });
+        if (dbfluteEngineDirs == null || dbfluteEngineDirs.length == 0) {
+            throw new MojoFailureException("Not found dbflute engine in " + mydbfluteDir.getName() + ".");
+        }
+        final List<String> engineDirNameList = new ArrayList<String>();
+        for (File engineDir : dbfluteEngineDirs) {
+            engineDirNameList.add(engineDir.getName());
+        }
+        dbfluteVersion = extractLatestVersion(downloadFilePrefix, engineDirNameList);
     }
 
+    protected String extractLatestVersion(String enginePrefix, List<String> engineDirNameList) {
+        final TreeSet<String> versionOrderedSet = new TreeSet<String>(new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                final String comp1;
+                final String comp2;
+                if (startsWithDBFlute(o1) && startsWithDBFlute(o2)) {
+                    comp1 = filterPriority(extractVersion(o1));
+                    comp2 = filterPriority(extractVersion(o2));
+                } else {
+                    comp1 = (startsWithDBFlute(o1) ? "9" : "0") + o1;
+                    comp2 = (startsWithDBFlute(o2) ? "9" : "0") + o2;
+                }
+                return -comp1.compareTo(comp2); // ordering bigger
+            }
+
+            protected String extractVersion(String o1) {
+                return o1.substring(o1.indexOf("-") + "-".length());
+            }
+
+            protected boolean startsWithDBFlute(String str) {
+                return str.startsWith(enginePrefix);
+            }
+
+            protected String filterPriority(String ver) {
+                if (!ver.contains("-")) { // e.g. dbflute-1.1.0 (B. next priority)
+                    return ver + "-77";
+                }
+                // contains hyphen here
+                if (ver.contains("-sp")) { // e.g. 1.1.0-sp1 (A. most priority)
+                    return ver.replace("-sp", "-99");
+                } else if (ver.contains("-RC")) { // e.g. 1.1.0-RC1 (C. middle priority)
+                    return ver.replace("-RC", "-55");
+                } else if (ver.contains("-SNAPSHOT")) { // e.g. 1.1.0-RC1 (D. low priority)
+                    return ver.substring(0, ver.indexOf("-")) + "-33" + ver.substring(ver.indexOf("-"));
+                } else { // e.g. 1.1.0-pilot1 (E. low priority)
+                    return ver.substring(0, ver.indexOf("-")) + "-11" + ver.substring(ver.indexOf("-"));
+                }
+            }
+        });
+        versionOrderedSet.addAll(engineDirNameList);
+        final String latestVersionEngineName = versionOrderedSet.iterator().next();
+        return latestVersionEngineName.substring(latestVersionEngineName.indexOf("-") + "-".length());
+    }
+
+    // ===================================================================================
+    //                                                                            Database
+    //                                                                            ========
     public void initDatabase() throws MojoFailureException {
         DatabaseType dbType = DatabaseType.UNKNOWN;
         if (database == null) {
@@ -293,6 +354,9 @@ public class CreateClientPlugin extends AbstractMojo {
         }
     }
 
+    // ===================================================================================
+    //                                                                            Accessor
+    //                                                                            ========
     public File getDbfluteDir() {
         return new File(mydbfluteDir, dbfluteName);
     }
