@@ -15,17 +15,11 @@
  */
 package org.dbflute.maven.plugin;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.dbflute.maven.plugin.officialcopy.DfPublicProperties;
-import org.dbflute.maven.plugin.upgrade.DBFluteUpgrader;
+import org.dbflute.maven.plugin.command.CommandExecutor;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
@@ -36,113 +30,28 @@ import org.dbflute.maven.plugin.util.LogUtil;
  * @author shinsuke
  * @author jflute
  */
-public class UpgradePlugin extends AbstractMojo {
+public class UpgradePlugin extends CommandPlugin {
 
     /**
      * @parameter property="dbflute.version" 
      */
     protected String dbfluteVersion;
 
-    /**
-     * @parameter property="dbflute.downloadFilePrefix" default-value="dbflute-"
-     */
-    protected String downloadFilePrefix;
-
-    /**
-     * @parameter property="dbflute.downloadDirUrl" default-value="http://dbflute.org/download/dbflute/"
-     */
-    protected String downloadDirUrl;
-
-    /**
-     * @parameter property="dbflute.downloadFileExtension" default-value=".zip"
-     */
-    protected String downloadFileExtension;
-
-    /**
-     * @parameter property="dbflute.mydbfluteDir" default-value="${basedir}/mydbflute"
-     */
-    protected File mydbfluteDir;
-
-    /**
-     * @parameter property="dbflute.dbfluteClientDir" 
-     */
-    private File dbfluteClientDir;
-
-    /**
-     * @parameter property="dbflute.clientProject"
-     */
-    protected String clientProject;
-
-    /** name of DBFlute containing its version same as DBFlute directory name under 'mydbflute'. (NullAllowed: until execution) */
-    private String dbfluteName;
-
-    /** path of download for DBFlute engine. (NullAllowed: until execution) */
-    private String downloadPath;
-
-    /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
-    private DfPublicProperties publicProperties;
-
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
 
-        initDBFluteVersionIfPossible();
-        if (StringUtils.isBlank(dbfluteVersion)) {
-            throw new MojoFailureException("Missing dbfluteVersion property.");
-        }
-
-        dbfluteName = downloadFilePrefix + dbfluteVersion;
-        downloadPath = downloadDirUrl + dbfluteName + downloadFileExtension;
-
-        DBFluteUpgrader downloader = new DBFluteUpgrader(this);
-        downloader.execute();
+        CommandExecutor creator = new CommandExecutor(this);
+        creator.execute("manage");
     }
 
     /**
-     * Initialize dbfluteVersion if possible. <br>
-     * Set up the version as latest release by public properties. <br>
-     * No action if it already exists and if cannot get public properties.
-     * @throws MojoFailureException When it fails to handle public properties.
+     * @param cmds arguments for a command line
      */
-    private void initDBFluteVersionIfPossible() throws MojoFailureException {
-        if (!StringUtils.isBlank(dbfluteVersion)) {
-            return;
+    @Override
+    public void updateArgs(List<String> cmds) {
+        cmds.add("upgrade");
+        if (dbfluteVersion != null) {
+            cmds.add(dbfluteVersion);
         }
-        try {
-            if (publicProperties == null) {
-                LogUtil.getLog().info("...Loading public properties");
-                publicProperties = new DfPublicProperties();
-                publicProperties.load();
-            }
-            dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
-            LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
-        } catch (RuntimeException e) {
-            throw new MojoFailureException("Failed to handle public properties", e);
-        }
-    }
-
-    public File getDbfluteDir() {
-        return new File(mydbfluteDir, dbfluteName);
-    }
-
-    public File getDbfluteClientDir() {
-        return dbfluteClientDir;
-    }
-
-    public String getClientProject() {
-        return clientProject;
-    }
-
-    public InputStream getDownloadInputStream() throws MojoExecutionException {
-        try {
-            URL url = new URL(downloadPath);
-            return url.openStream();
-        } catch (IOException e) {
-            throw new MojoExecutionException("Could not open a connection of " + downloadPath + "\n\nIf you want to use a proxy server,\n"
-                    + "run \"mvn dbflute:download -Dhttp.proxyHost=<hostname> -Dhttp.proxyPort=<port>\".", e);
-        }
-    }
-
-    public String getDbfluteName() {
-        return dbfluteName;
     }
 }

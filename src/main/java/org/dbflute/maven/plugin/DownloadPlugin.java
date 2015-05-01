@@ -50,11 +50,6 @@ public class DownloadPlugin extends AbstractMojo {
      */
     protected String downloadUrl;
 
-    /**
-     * @parameter property="dbflute.publicPropertyUrl" default-value="http://dbflute.org/meta/public.properties"
-     */
-    protected String publicPropertyUrl;
-
     /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
     private DfPublicProperties publicProperties;
 
@@ -98,10 +93,6 @@ public class DownloadPlugin extends AbstractMojo {
         }
     }
 
-    public String getPublicPropertyUrl() {
-        return publicPropertyUrl;
-    }
-
     public String getDbfluteVersion() {
         return dbfluteVersion;
     }
@@ -116,5 +107,9 @@ public class DownloadPlugin extends AbstractMojo {
 
     public String getDownloadUrl() {
         return downloadUrl;
+    }
+
+    public DfPublicProperties getPublicProperties() {
+        return publicProperties;
     }
 }
