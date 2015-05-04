@@ -28,10 +28,10 @@ import org.dbflute.maven.plugin.util.ResourceUtil;
  */
 public class EngineDownloadHandler {
 
-    protected String dbfluteVersion; // null allowed (from properties)
+    protected String dbfluteVersion; // null allowed (then from properties)
     protected final File mydbfluteDir;
     protected final String downloadFilePrefix;
-    protected String downloadUrl; // null allowed (from properties)
+    protected String downloadUrl; // null allowed (then from properties)
     protected final DfPublicProperties publicProp;
 
     public EngineDownloadHandler(String dbfluteVersion, File mydbfluteDir, String downloadFilePrefix, String downloadUrl, DfPublicProperties publicProp) {
@@ -48,8 +48,8 @@ public class EngineDownloadHandler {
             if (dbfluteVersion == null) {
                 throw new MojoFailureException("Set <dbfluteVersion> in pom.xml of -Ddbflute.version=<version>.");
             }
+            LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
         }
-
         File dbfluteDir = new File(mydbfluteDir, downloadFilePrefix + dbfluteVersion);
         if (!dbfluteDir.exists()) {
             if (downloadUrl == null) {

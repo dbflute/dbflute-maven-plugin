@@ -17,7 +17,6 @@ package org.dbflute.maven.plugin;
 
 import java.io.File;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -38,17 +37,17 @@ public class DownloadPlugin extends AbstractMojo {
     /**
      * @parameter property="dbflute.version" 
      */
-    protected String dbfluteVersion;
+    private String dbfluteVersion;
 
     /**
      * @parameter property="dbflute.downloadFilePrefix" default-value="dbflute-"
      */
-    protected String downloadFilePrefix;
+    private String downloadFilePrefix;
 
     /**
      * @parameter property="dbflute.downloadUrl"
      */
-    protected String downloadUrl;
+    private String downloadUrl;
 
     /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
     private DfPublicProperties publicProperties;
@@ -56,38 +55,22 @@ public class DownloadPlugin extends AbstractMojo {
     /**
      * @parameter property="dbflute.mydbfluteDir" default-value="${basedir}/mydbflute"
      */
-    protected File mydbfluteDir;
+    private File mydbfluteDir;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
 
-        initDBFluteVersionIfPossible();
-        if (StringUtils.isBlank(dbfluteVersion)) {
-            throw new MojoFailureException("Missing dbfluteVersion property.");
-        }
-
-        DBFluteDownloader downloader = new DBFluteDownloader(this);
-        downloader.execute();
+        loadPublicPropertiesIfNeeds();
+        new DBFluteDownloader(this).execute();
     }
 
-    /**
-     * Initialize dbfluteVersion if possible. <br>
-     * Set up the version as latest release by public properties. <br>
-     * No action if it already exists and if cannot get public properties.
-     * @throws MojoFailureException When it fails to handle public properties.
-     */
-    private void initDBFluteVersionIfPossible() throws MojoFailureException {
-        if (!StringUtils.isBlank(dbfluteVersion)) {
-            return;
-        }
+    private void loadPublicPropertiesIfNeeds() throws MojoFailureException {
         try {
             if (publicProperties == null) {
                 LogUtil.getLog().info("...Loading public properties");
                 publicProperties = new DfPublicProperties();
                 publicProperties.load();
             }
-            dbfluteVersion = publicProperties.getDBFluteLatestReleaseVersion();
-            LogUtil.getLog().info("Using DBFlute latest release version: " + dbfluteVersion);
         } catch (RuntimeException e) {
             throw new MojoFailureException("Failed to handle public properties", e);
         }
