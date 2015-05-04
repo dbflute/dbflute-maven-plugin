@@ -32,19 +32,20 @@ public class EngineDownloadHandler {
     protected final File mydbfluteDir;
     protected final String downloadFilePrefix;
     protected String downloadUrl; // null allowed (then from properties)
-    protected final DfPublicProperties publicProp;
 
-    public EngineDownloadHandler(String dbfluteVersion, File mydbfluteDir, String downloadFilePrefix, String downloadUrl, DfPublicProperties publicProp) {
+    /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
+    protected DfPublicProperties cachedPublicProp;
+
+    public EngineDownloadHandler(String dbfluteVersion, File mydbfluteDir, String downloadFilePrefix, String downloadUrl) {
         this.dbfluteVersion = dbfluteVersion;
         this.mydbfluteDir = mydbfluteDir;
         this.downloadFilePrefix = downloadFilePrefix;
         this.downloadUrl = downloadUrl;
-        this.publicProp = publicProp;
     }
 
     public void download() throws MojoExecutionException, MojoFailureException {
         if (dbfluteVersion == null) {
-            dbfluteVersion = publicProp.getDBFluteLatestReleaseVersion();
+            dbfluteVersion = preparePublicProp().getDBFluteLatestReleaseVersion();
             if (dbfluteVersion == null) {
                 throw new MojoFailureException("Set <dbfluteVersion> in pom.xml of -Ddbflute.version=<version>.");
             }
@@ -53,7 +54,7 @@ public class EngineDownloadHandler {
         File dbfluteDir = new File(mydbfluteDir, downloadFilePrefix + dbfluteVersion);
         if (!dbfluteDir.exists()) {
             if (downloadUrl == null) {
-                downloadUrl = publicProp.getDBFluteDownloadUrl(dbfluteVersion);
+                downloadUrl = preparePublicProp().getDBFluteDownloadUrl(dbfluteVersion);
                 if (downloadUrl == null) {
                     throw new MojoFailureException(
                             "Set <downloadUrl> in pom.xml of "
@@ -64,6 +65,19 @@ public class EngineDownloadHandler {
             ResourceUtil.unzip(downloadUrl, dbfluteDir);
         } else {
             LogUtil.getLog().info(dbfluteDir.getAbsolutePath() + " exists.");
+        }
+    }
+
+    private DfPublicProperties preparePublicProp() throws MojoFailureException {
+        try {
+            if (cachedPublicProp == null) {
+                LogUtil.getLog().info("...Loading public properties");
+                cachedPublicProp = new DfPublicProperties();
+                cachedPublicProp.load();
+            }
+            return cachedPublicProp;
+        } catch (RuntimeException e) {
+            throw new MojoFailureException("Failed to handle public properties", e);
         }
     }
 }

@@ -21,7 +21,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.dbflute.maven.plugin.download.DBFluteDownloader;
-import org.dbflute.maven.plugin.officialcopy.DfPublicProperties;
 import org.dbflute.maven.plugin.util.LogUtil;
 
 /**
@@ -49,9 +48,6 @@ public class DownloadPlugin extends AbstractMojo {
      */
     private String downloadUrl;
 
-    /** public properties that contains version info, and DBFlute provides officially (NullAllowed: lazy-loaded) */
-    private DfPublicProperties publicProperties;
-
     /**
      * @parameter property="dbflute.mydbfluteDir" default-value="${basedir}/mydbflute"
      */
@@ -59,21 +55,7 @@ public class DownloadPlugin extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         LogUtil.init(getLog());
-
-        loadPublicPropertiesIfNeeds();
         new DBFluteDownloader(this).execute();
-    }
-
-    private void loadPublicPropertiesIfNeeds() throws MojoFailureException {
-        try {
-            if (publicProperties == null) {
-                LogUtil.getLog().info("...Loading public properties");
-                publicProperties = new DfPublicProperties();
-                publicProperties.load();
-            }
-        } catch (RuntimeException e) {
-            throw new MojoFailureException("Failed to handle public properties", e);
-        }
     }
 
     public String getDbfluteVersion() {
@@ -90,9 +72,5 @@ public class DownloadPlugin extends AbstractMojo {
 
     public String getDownloadUrl() {
         return downloadUrl;
-    }
-
-    public DfPublicProperties getPublicProperties() {
-        return publicProperties;
     }
 }

@@ -20,7 +20,6 @@ import java.io.File;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.dbflute.maven.plugin.DownloadPlugin;
-import org.dbflute.maven.plugin.officialcopy.DfPublicProperties;
 
 /**
  * DBFluteDownloader downloads dbflute-*.zip and extracts it.
@@ -45,7 +44,6 @@ public class DBFluteDownloader {
         final File mydbfluteDir = plugin.getMydbfluteDir();
         final String downloadFilePrefix = plugin.getDownloadFilePrefix();
         final String downloadUrl = plugin.getDownloadUrl();
-        final DfPublicProperties publicProp = plugin.getPublicProperties();
-        return new EngineDownloadHandler(dbfluteVersion, mydbfluteDir, downloadFilePrefix, downloadUrl, publicProp);
+        return new EngineDownloadHandler(dbfluteVersion, mydbfluteDir, downloadFilePrefix, downloadUrl);
     }
 }
