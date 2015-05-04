@@ -30,6 +30,11 @@
 			<name>Shinsuke Sugaya</name>
 			<timezone>+9</timezone>
 		</developer>
+		<developer>
+			<id>jflute</id>
+			<name>Masahiko Kubo</name>
+			<timezone>+9</timezone>
+		</developer>
 	</developers>
 	<issueManagement>
 		<system>Github</system>
